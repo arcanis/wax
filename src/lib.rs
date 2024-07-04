@@ -711,6 +711,10 @@ impl<'t> Glob<'t> {
         self.tree.as_ref().as_token().is_empty()
     }
 
+    pub fn to_regex(&self) -> Regex {
+        self.regex.clone()
+    }
+
     fn compile<T>(tree: impl Borrow<T>) -> Result<Regex, CompileError>
     where
         T: ConcatenationTree<'t>,
