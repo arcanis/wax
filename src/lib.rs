@@ -712,7 +712,7 @@ impl<'t> Glob<'t> {
     }
 
     pub fn to_regex(&self) -> Regex {
-        self.regex.clone()
+        self.program.clone()
     }
 
     fn compile<T>(tree: impl Borrow<T>) -> Result<Regex, CompileError>
