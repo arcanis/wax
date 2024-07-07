@@ -138,15 +138,24 @@ pub fn case_folded_eq(left: &str, right: &str) -> bool {
     }
 }
 
-pub fn compile<'t, T>(tree: impl Borrow<T>) -> Result<Regex, CompileError>
+pub fn compile_to_pattern<'t, T>(tree: impl Borrow<T>) -> Result<String, CompileError>
 where
     T: ConcatenationTree<'t>,
 {
     let mut pattern = String::new();
+
     pattern.push('^');
     encode(Grouping::Capture, None, &mut pattern, tree);
     pattern.push('$');
-    Regex::new(&pattern).map_err(|error| match error {
+
+    Ok(pattern)
+}
+
+pub fn compile<'t, T>(tree: impl Borrow<T>) -> Result<Regex, CompileError>
+where
+    T: ConcatenationTree<'t>,
+{
+    Regex::new(&compile_to_pattern(tree)?).map_err(|error| match error {
         RegexError::CompiledTooBig(_) => CompileError {
             kind: CompileErrorKind::OversizedProgram,
         },
@@ -181,18 +190,17 @@ fn encode<'t, T>(
         pattern.push(')');
     }
 
+    let mut is_case_insensitive = false;
+
     // TODO: Use `Grouping` everywhere a group is encoded.
     for (position, token) in tree.borrow().concatenation().iter().with_position() {
         match token.topology() {
             TokenTopology::Leaf(leaf) => match (position, leaf) {
                 (_, Literal(literal)) => {
-                    // TODO: Only encode changes to casing flags.
                     // TODO: Should Unicode support also be toggled by casing flags?
-                    if literal.is_case_insensitive() {
-                        pattern.push_str("(?i)");
-                    }
-                    else {
-                        pattern.push_str("(?-i)");
+                    if literal.is_case_insensitive() != is_case_insensitive {
+                        is_case_insensitive = literal.is_case_insensitive();
+                        pattern.push_str(if is_case_insensitive { "(?i)" } else { "(?-i)" });
                     }
                     pattern.push_str(&literal.text().escaped());
                 },
