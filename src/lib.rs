@@ -88,9 +88,6 @@ use crate::walk::WalkError;
 
 pub use crate::capture::MatchedText;
 
-#[cfg(windows)]
-const PATHS_ARE_CASE_INSENSITIVE: bool = true;
-#[cfg(not(windows))]
 const PATHS_ARE_CASE_INSENSITIVE: bool = false;
 
 trait CharExt: Sized {
